@@ -1,0 +1,55 @@
+name: compile check
+
+on: [push, pull_request]
+
+jobs:
+  ezquake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - name: Checkout qwprot
+      uses: actions/checkout@v4
+    - name: Checkout ezquake
+      uses: actions/checkout@v4
+      with:
+        repository: QW-Group/ezquake-source
+        path: ezquake
+        submodules: recursive
+    - name: Update qwprot in ezquake
+      run: |
+        cp src/* ezquake/src/qwprot/src
+        shasum ezquake/src/qwprot/src/protocol.h > checksum
+    - name: Install dependencies
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -qq --no-install-recommends cmake ninja-build libsdl2-dev libjansson-dev libexpat1-dev libcurl4-openssl-dev libpng-dev libjpeg-dev libspeex-dev libspeexdsp-dev libfreetype6-dev libsndfile1-dev libpcre2-dev libminizip-dev
+    - name: Run CMake
+      uses: lukka/run-cmake@v10
+      with:
+        cmakeListsTxtPath: '${{ github.workspace }}/ezquake/CMakeLists.txt'
+        configurePreset: dynamic
+        buildPreset: dynamic-debug
+    - name: Verify that build didn't change protocol.h
+      run: shasum -c checksum
+
+  mvdsv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - name: Checkout qwprot
+      uses: actions/checkout@v4
+    - name: Checkout mvdsv
+      uses: actions/checkout@v4
+      with:
+        repository: QW-Group/mvdsv
+        path: mvdsv
+        submodules: recursive
+    - name: Update qwprot in mvdsv
+      run: |
+        cp src/* mvdsv/src/qwprot/src
+        shasum mvdsv/src/qwprot/src/protocol.h > checksum
+    - name: Build mvdsv
+      run: ./build_cmake.sh linux-amd64
+      working-directory: mvdsv
+    - name: Verify that build didn't change protocol.h
+      run: shasum -c checksum
