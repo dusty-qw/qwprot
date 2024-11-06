@@ -41,6 +41,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # define FTE_PEXT_ENTITYDBL2		0x00004000	// max of 1024 ents instead of 512
 # define FTE_PEXT_FLOATCOORDS		0x00008000	// supports floating point origins.
 # define FTE_PEXT_SPAWNSTATIC2		0x00400000	// Sends an entity delta instead of a baseline.
+# define FTE_PEXT_COLOURMOD			0x00080000	// Sends three bytes of color modification for an entity
 # define FTE_PEXT_256PACKETENTITIES	0x01000000	// Client can recieve 256 packet entities.
 # define FTE_PEXT_CHUNKEDDOWNLOADS	0x20000000	// alternate file download method. Hopefully it'll give
 												// quadroupled download speed, especially on higher pings.
@@ -291,8 +292,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // bits 11..13 are player move type bits (ZQuake extension)
 #define PF_PMC_SHIFT	11
 #define	PF_PMC_MASK		7
+#ifdef FTE_PEXT_TRANS
+#define	PF_ONGROUND		(1<<22)			// ZQuake extension, 14 offset to extra playerflags
+#define	PF_SOLID		(1<<23)			// ZQuake extension, 15 offset to extra playerflags
+#else
 #define	PF_ONGROUND		(1<<14)			// ZQuake extension
 #define	PF_SOLID		(1<<15)			// ZQuake extension
+#endif
 
 // encoded player move types
 #define PMC_NORMAL				0		// normal ground movement
@@ -362,6 +368,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # endif // FTE_PEXT_SCALE
 # ifdef FTE_PEXT_TRANS
 #  define U_FTE_TRANS		(1<<1)	//transparency value
+#  define	PF_EXTRA_PFS	(1<<15)	//TRANS requires extra playerflags
 #  define	PF_TRANS_Z		(1<<17)
 # endif // FTE_PEXT_TRANS
 # ifdef FTE_PEXT_FATNESS
@@ -369,6 +376,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 									//moves verticies along normals
 									// Useful for vacuum chambers...
 # endif // FTE_PEXT_FATNESS
+# ifdef FTE_PEXT_COLOURMOD
+# define PF_COLOURMOD	(1<<19)
+# endif // FTE_PEXT_COLOURMOD
 # ifdef FTE_PEXT_MODELDBL
 #  define U_FTE_MODELDBL	(1<<3)		//extra bit for modelindexes
 # endif // FTE_PEXT_MODELDBL
@@ -382,7 +392,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # define U_FTE_YETMORE	(1<<7)		//even more extension info stuff.
 # define U_FTE_DRAWFLAGS	(1<<8)		//use an extra qbyte for origin parts, cos one of them is off
 # define U_FTE_ABSLIGHT	(1<<9)		//Force a lightlevel
-# define U_FTE_COLOURMOD	(1<<10)		//rgb
+# ifdef FTE_PEXT_COLOURMOD
+# define U_FTE_COLOURMOD (1<<10)		//rgb
+# endif // FTE_PEXT_COLOURMOD
 # define U_FTE_DPFLAGS (1<<11)
 # define U_FTE_TAGINFO (1<<12)
 # define U_FTE_LIGHT (1<<13)
@@ -460,7 +472,12 @@ typedef struct entity_state_s {
 	int		colormap;
 	int		skinnum;
 	int		effects;
-	byte	trans;
+#ifdef FTE_PEXT_TRANS
+	byte		trans;
+#endif
+#ifdef FTE_PEXT_COLOURMOD
+	byte		colourmod[3];
+#endif
 } entity_state_t;
 
 #define	MAX_PACKET_ENTITIES			64	// doesn't include nails
