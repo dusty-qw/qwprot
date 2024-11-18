@@ -45,6 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # define FTE_PEXT_256PACKETENTITIES	0x01000000	// Client can recieve 256 packet entities.
 # define FTE_PEXT_CHUNKEDDOWNLOADS	0x20000000	// alternate file download method. Hopefully it'll give
 												// quadroupled download speed, especially on higher pings.
+# define FTE_PEXT_CSQC				0x40000000	//csqc additions
 #endif // PROTOCOL_VERSION_FTE
 
 #ifdef PROTOCOL_VERSION_FTE2
@@ -68,6 +69,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # define MVD_PEXT1_HIDDEN_MESSAGES   (1 <<  5) // dem_multiple(0) packets are in format (<length> <type-id>+ <packet-data>)*
 //# define MVD_PEXT1_SERVERSIDEWEAPON2 (1 <<  6) // Server-side weapon selection supports clc_mvd_weapon_full_impulse.
 												 // Can be defined in a project Makefile
+# define MVD_PEXT1_EZCSQC            (1 << 7)  // Marker extension for the hardcoded ezQuake side KTX CSQC code
 
 # if defined(MVD_PEXT1_DEBUG_ANTILAG) || defined(MVD_PEXT1_DEBUG_WEAPON)
 #  define MVD_PEXT1_DEBUG
@@ -233,6 +235,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif // FTE_PEXT_MODELDBL
 
 #define svc_fte_spawnbaseline2	66
+#ifdef FTE_PEXT_CSQC
+#define svc_fte_csqcentities	76
+#endif
 #define svc_qizmovoice			83
 
 #ifdef FTE_PEXT2_VOICECHAT
