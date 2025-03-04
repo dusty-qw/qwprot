@@ -508,7 +508,8 @@ typedef struct sprojectile_state_s {
 	int		flags;			// nolerp, etc
 	int		sflag;
 	int		owner;
-
+	int		fproj_num;
+	float	time_offset;
 	float	time;
 	vec3_t	origin;
 	vec3_t	angles;
@@ -538,6 +539,7 @@ typedef struct usercmd_s {
 	short	upmove;
 	byte	buttons;
 	byte	impulse;
+	byte	impulse_pred; // for antilag 1
 } usercmd_t;
 
 //==============================================
