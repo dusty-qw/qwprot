@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #ifdef PROTOCOL_VERSION_FTE 
 # define FTE_PEXT_TRANS				0x00000008	// .alpha support
-//#define FTE_PEXT_ACCURATETIMINGS	0x00000040  // qqshka: not actually used in ezquake.
+# define FTE_PEXT_ACCURATETIMINGS	0x00000040  // qqshka: not actually used in ezquake.
 //												// I added it to ezquake in hope that someone made some
 //												// rockets(enitities) smoothing code...
 # define FTE_PEXT_HLBSP				0x00000200	// stops fte servers from complaining
@@ -46,6 +46,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # define FTE_PEXT_CHUNKEDDOWNLOADS	0x20000000	// alternate file download method. Hopefully it'll give
 												// quadroupled download speed, especially on higher pings.
 # define FTE_PEXT_CSQC				0x40000000	//csqc additions
+# define FTE_PEXT_DPFLAGS			0x80000000	//extra flags for viewmodel/externalmodel and possible other persistant style flags.
 #endif // PROTOCOL_VERSION_FTE
 
 #ifdef PROTOCOL_VERSION_FTE2
@@ -69,8 +70,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # define MVD_PEXT1_HIDDEN_MESSAGES   (1 <<  5) // dem_multiple(0) packets are in format (<length> <type-id>+ <packet-data>)*
 //# define MVD_PEXT1_SERVERSIDEWEAPON2 (1 <<  6) // Server-side weapon selection supports clc_mvd_weapon_full_impulse.
 												 // Can be defined in a project Makefile
-#define MVD_PEXT1_WEAPONPREDICTION	(1 <<  7) // Send weapon and attack related data for weapon prediction
-#define MVD_PEXT1_SIMPLEPROJECTILE	(1 <<  8) // Projectiles are sent as simple semi-stateless ents
+# define	MVD_PEXT1_WEAPONPREDICTION	(1 <<  7) // Weapon prediction
+# define	MVD_PEXT1_SIMPLEPROJECTILE	(1 <<  8) // Simple projectiles
 
 # if defined(MVD_PEXT1_DEBUG_ANTILAG) || defined(MVD_PEXT1_DEBUG_WEAPON)
 #  define MVD_PEXT1_DEBUG
@@ -246,9 +247,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif // FTE_PEXT2_VOICECHAT
 
 #ifdef MVD_PEXT1_SIMPLEPROJECTILE
-#define	svc_packetsprojectiles		100		// [...]
-#define	svc_deltapacketsprojectiles	101		// [...]
-#endif
+# define	svc_packetsprojectiles		100		// [...]
+# define	svc_deltapacketsprojectiles	101		// [...]
+#endif // MVD_PEXT1_SIMPLEPROJECTILE
 
 //==============================================
 
@@ -263,8 +264,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define clc_upload		7		// teleport request, spectator only
 
 #ifdef MVD_PEXT1_SIMPLEPROJECTILE
-#define clc_ackframe	50
-#endif
+# define clc_ackframe	50
+#endif // MVD_PEXT1_SIMPLEPROJECTILE
 
 #ifdef FTE_PEXT2_VOICECHAT
 #define clc_voicechat	83		// FTE voice chat.
@@ -288,15 +289,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // others
 #define clc_mvd_weapon_full_impulse		128	// if set, each weapon set as a byte, rather than packing two into one
-#if defined(MVD_PEXT1_DEBUG_ANTILAG) || defined(MVD_PEXT1_DEBUG_WEAPON)
-#define MVD_PEXT1_DEBUG
-#define MVD_PEXT1_ANTILAG_CLIENTPOS       128 // flag set on the playernum if the client positions are also included
-
-#define clc_mvd_debug 201
-
-#define clc_mvd_debug_type_antilag 1
-#define clc_mvd_debug_type_weapon  2
-#endif
 
 //==============================================
 
@@ -322,7 +314,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #else
 #define	PF_ONGROUND		(1<<14)			// ZQuake extension
 #define	PF_SOLID		(1<<15)			// ZQuake extension
-#define	PF_FTE_EXTRA	(1<<16)			// FTE extension
 #endif
 
 // encoded player move types
@@ -365,7 +356,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //==============================================
 
 // the first 16 bits of a packetentities update holds 9 bits of entity number and 7 bits of flags
-// of entity number and 7 bits of flags
 #define	U_ORIGIN1	(1 << 9)
 #define	U_ORIGIN2	(1 << 10)
 #define	U_ORIGIN3	(1 << 11)
@@ -420,10 +410,16 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # ifdef FTE_PEXT_COLOURMOD
 # define U_FTE_COLOURMOD (1<<10)		//rgb
 # endif // FTE_PEXT_COLOURMOD
-# define U_FTE_DPFLAGS (1<<11)
-# define U_FTE_TAGINFO (1<<12)
-# define U_FTE_LIGHT (1<<13)
-# define U_FTE_EFFECTS16	(1<<14)
+# ifdef FTE_PEXT_DPFLAGS
+#  define U_FTE_DPFLAGS (1<<11)
+# endif // FTE_PEXT_DPFLAGS
+# ifdef FTE_PEXT_SETATTACHMENT
+#  define U_FTE_TAGINFO (1<<12)
+# endif // FTE_PEXT_SETATTACHMENT
+# ifdef FTE_PEXT_DPFLAGS
+#  define U_FTE_LIGHT (1<<13)
+#  define U_FTE_EFFECTS16	(1<<14)
+# endif // FTE_PEXT_DPFLAGS
 # define U_FTE_FARMORE (1<<15)
 #endif // PROTOCOL_VERSION_FTE
 
@@ -507,21 +503,19 @@ typedef struct entity_state_s {
 
 #ifdef MVD_PEXT1_SIMPLEPROJECTILE
 #define MAX_SIMPLEPROJECTILES	64
-typedef struct sprojectile_state_s
-{
+typedef struct sprojectile_state_s {
 	int		number;			// edict index
 	int		flags;			// nolerp, etc
+	int		sflag;
 	int		owner;
 
-	int		fproj_num;
-	float	time_offset;
 	float	time;
 	vec3_t	origin;
 	vec3_t	angles;
 	int		modelindex;
 	vec3_t	velocity;
 } sprojectile_state_t;
-#endif
+#endif // MVD_PEXT1_SIMPLEPROJECTILE
 
 #define	MAX_PACKET_ENTITIES			64	// doesn't include nails
 #define MAX_PEXT256_PACKET_ENTITIES 256	// up to 256 ents, look FTE_PEXT_256PACKETENTITIES
@@ -533,7 +527,7 @@ typedef struct packet_entities_s {
 #ifdef MVD_PEXT1_SIMPLEPROJECTILE
 	int		num_sprojectiles;
 	sprojectile_state_t sprojectiles[MAX_SIMPLEPROJECTILES];
-#endif
+#endif // MVD_PEXT1_SIMPLEPROJECTILE
 } packet_entities_t;
 
 typedef struct usercmd_s {
@@ -544,7 +538,6 @@ typedef struct usercmd_s {
 	short	upmove;
 	byte	buttons;
 	byte	impulse;
-	byte	impulse_pred; //this is our impulse, even if it was overrode by serversideweapon
 } usercmd_t;
 
 //==============================================
@@ -594,18 +587,18 @@ typedef struct temp_entity_list_s {
 // embedded in dem_multiple(0) - should be safely skipped in clients
 // format is <int:length> <short:type>*   where <type> is duplicated if 0xFFFF.  <length> is length of the data packet, not the header
 enum {
-	mvdhidden_antilag_position				= 0x0000,	// mvdhidden_antilag_position_header_t mvdhidden_antilag_position_t*
-	mvdhidden_usercmd						= 0x0001,	// <byte: playernum> <byte:dropnum> <byte: msec, vec3_t: angles, short[3]: forward side up> <byte: buttons> <byte: impulse>
-	mvdhidden_usercmd_weapons				= 0x0002,	// <byte: source playernum> <int: items> <byte[4]: ammo> <byte: result> <byte*: weapon priority (nul terminated)>
-	mvdhidden_demoinfo						= 0x0003,	// <short: block#> <byte[] content>
-	mvdhidden_commentary_track				= 0x0004,	// <byte: track#> [todo... <byte: audioformat> <string: short-name> <string: author(s)> <float: start-offset>?]
-	mvdhidden_commentary_data				= 0x0005,	// <byte: track#> [todo... format-specific]
-	mvdhidden_commentary_text_segment		= 0x0006,	// <byte: track#> [todo... <float: duration> <string: text (utf8)>]
-	mvdhidden_dmgdone						= 0x0007,	// <byte: type-flags> <short: damaged ent#> <short: damaged ent#> <short: damage>
-	mvdhidden_usercmd_weapons_ss			= 0x0008,	// (same format as mvdhidden_usercmd_weapons)
-	mvdhidden_usercmd_weapon_instruction	= 0x0009,	// <byte: playernum> <byte: flags> <int: sequence#> <int: mode> <byte[10]: weaponlist>
-	mvdhidden_paused_duration				= 0x000A,	// <byte: msec> ... actual time elapsed, not gametime (can be used to keep stream running) ... expected to be QTV only
-	mvdhidden_extended						= 0xFFFF	// doubt we'll ever get here: read next short...
+	mvdhidden_antilag_position           = 0x0000,  // mvdhidden_antilag_position_header_t mvdhidden_antilag_position_t*
+	mvdhidden_usercmd                    = 0x0001,  // <byte: playernum> <byte:dropnum> <byte: msec, vec3_t: angles, short[3]: forward side up> <byte: buttons> <byte: impulse>
+	mvdhidden_usercmd_weapons            = 0x0002,  // <byte: source playernum> <int: items> <byte[4]: ammo> <byte: result> <byte*: weapon priority (nul terminated)>
+	mvdhidden_demoinfo                   = 0x0003,  // <short: block#> <byte[] content>
+	mvdhidden_commentary_track           = 0x0004,  // <byte: track#> [todo... <byte: audioformat> <string: short-name> <string: author(s)> <float: start-offset>?]
+	mvdhidden_commentary_data            = 0x0005,  // <byte: track#> [todo... format-specific]
+	mvdhidden_commentary_text_segment    = 0x0006,  // <byte: track#> [todo... <float: duration> <string: text (utf8)>]
+	mvdhidden_dmgdone                    = 0x0007,  // <byte: type-flags> <short: damaged ent#> <short: damaged ent#> <short: damage>
+	mvdhidden_usercmd_weapons_ss         = 0x0008,  // (same format as mvdhidden_usercmd_weapons)
+	mvdhidden_usercmd_weapon_instruction = 0x0009,  // <byte: playernum> <byte: flags> <int: sequence#> <int: mode> <byte[10]: weaponlist>
+	mvdhidden_paused_duration            = 0x000A,  // <byte: msec> ... actual time elapsed, not gametime (can be used to keep stream running) ... expected to be QTV only
+	mvdhidden_extended                   = 0xFFFF   // doubt we'll ever get here: read next short...
 };
 
 #define sizeof_mvdhidden_block_header_t_usercmd (1 + 1 + 1 + 3 * 4 + 3 * 2 + 1 + 1)
