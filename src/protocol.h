@@ -69,6 +69,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 												 // Can be defined in a project Makefile
 # define	MVD_PEXT1_WEAPONPREDICTION	(1 <<  7) // Weapon prediction
 # define	MVD_PEXT1_SIMPLEPROJECTILE	(1 <<  8) // Simple projectiles
+# define	MVD_PEXT1_SPRAYS			(1 <<  9) // Raw RGBA decal sprays
 
 # if defined(MVD_PEXT1_DEBUG_ANTILAG) || defined(MVD_PEXT1_DEBUG_WEAPON)
 #  define MVD_PEXT1_DEBUG
@@ -248,6 +249,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 # define	svc_deltapacketsprojectiles	101		// [...]
 #endif // MVD_PEXT1_SIMPLEPROJECTILE
 
+#ifdef MVD_PEXT1_SPRAYS
+# define svc_spray			102		// chunked RGBA spray image + world placement
+#endif // MVD_PEXT1_SPRAYS
+
 //==============================================
 
 // client to server
@@ -259,6 +264,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	clc_delta		5		// [byte] sequence number, requests delta compression of message
 #define clc_tmove		6		// teleport request, spectator only
 #define clc_upload		7		// teleport request, spectator only
+
+#ifdef MVD_PEXT1_SPRAYS
+# define clc_spray			8		// chunked RGBA spray image + world placement
+
+# define spraynet_begin		0
+# define spraynet_pixels	1
+# define spraynet_accept	2
+# define spraynet_deny		3
+# define spraynet_clear_all	4
+# define spraynet_clear_one	5
+# define spraynet_accept_need_pixels 1
+# define spraynet_hash_bytes	8
+# define spraynet_max_width	128
+# define spraynet_max_height	128
+# define spraynet_bpp		4
+# define spraynet_max_bytes	(spraynet_max_width * spraynet_max_height * spraynet_bpp)
+# define spraynet_chunk_bytes	1024
+#endif // MVD_PEXT1_SPRAYS
 
 #ifdef MVD_PEXT1_SIMPLEPROJECTILE
 # define clc_ackframe	50
@@ -598,6 +621,7 @@ enum {
 	mvdhidden_usercmd_weapon_instruction	= 0x0009,	// <byte: playernum> <byte: flags> <int: sequence#> <int: mode> <byte[10]: weaponlist>
 	mvdhidden_paused_duration				= 0x000A,	// <byte: msec> ... actual time elapsed, not gametime (can be used to keep stream running) ... expected to be QTV only
 	mvdhidden_demo_start_timestamp_ms		= 0x000B,	// <uint64: unix timestamp milliseconds at demo start>
+	mvdhidden_spray						= 0x000C,	// spraynet_* payload, without svc_spray byte
 	mvdhidden_extended						= 0xFFFF	// doubt we'll ever get here: read next short...
 };
 
