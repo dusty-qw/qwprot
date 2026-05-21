@@ -41,7 +41,7 @@ jobs:
     - name: Checkout mvdsv
       uses: actions/checkout@v4
       with:
-        repository: dusty-qw/mvdsv
+        repository: QW-Community/mvdsv
         path: mvdsv
         submodules: recursive
     - name: Update qwprot in mvdsv
